@@ -8,7 +8,7 @@ os.environ['PYSPARK_PYTHON'] = r'C:\Users\raghu\PycharmProjects\Stages_Tasks\.ve
 os.environ['PYSPARK_DRIVER_PYTHON'] = r'C:\Users\raghu\PycharmProjects\Stages_Tasks\.venv\Scripts\python.exe'
 
 
-Sparkobj = SparkSession.builder.appName("dataframe").getOrCreate()
+Sparkobj = SparkSession.builder.appName("dataframe").master("local[4]").getOrCreate()
 
 schema = StructType([
     StructField("id", IntegerType(), True),
