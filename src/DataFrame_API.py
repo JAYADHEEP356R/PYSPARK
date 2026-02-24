@@ -1,27 +1,31 @@
-# ===============================
-# FULL PYSPARK DATAFRAME PRACTICE
-# ===============================
+# ============================================================
+#              FULL PYSPARK DATAFRAME MASTER PRACTICE
+# ============================================================
 
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
+from pyspark.sql.types import *
 from pyspark.sql.functions import *
 from pyspark.sql.window import Window
+from pyspark import StorageLevel
 import os
 
 os.environ['PYSPARK_PYTHON'] = r'C:\Users\raghu\PycharmProjects\Stages_Tasks\.venv\Scripts\python.exe'
 os.environ['PYSPARK_DRIVER_PYTHON'] = r'C:\Users\raghu\PycharmProjects\Stages_Tasks\.venv\Scripts\python.exe'
 
-# -------------------------------
-# 1. Create Spark Session
-# -------------------------------
+
+# ------------------------------------------------------------
+# 1. Spark Session
+# ------------------------------------------------------------
 
 spark = SparkSession.builder \
-    .appName("FullDataFramePractice") \
+    .appName("FullDataFrameMasterPractice") \
     .getOrCreate()
 
-# -------------------------------
-# 2. Create Schema
-# -------------------------------
+spark.sparkContext.setLogLevel("ERROR")
+
+# ------------------------------------------------------------
+# 2. Schema
+# ------------------------------------------------------------
 
 schema = StructType([
     StructField("id", IntegerType(), True),
@@ -30,9 +34,9 @@ schema = StructType([
     StructField("salary", IntegerType(), True)
 ])
 
-# -------------------------------
+# ------------------------------------------------------------
 # 3. Create DataFrame
-# -------------------------------
+# ------------------------------------------------------------
 
 data = [
     (1, "Alice", "HR", 50000),
@@ -47,30 +51,26 @@ df = spark.createDataFrame(data, schema)
 print("Initial Data:")
 df.show()
 
-# -------------------------------
-# 4. Basic Transformations
-# -------------------------------
+# ============================================================
+# BASIC TRANSFORMATIONS
+# ============================================================
 
-print("Select Columns:")
+print("Select:")
 df.select("name", "salary").show()
 
-print("Filter Salary > 60000:")
+print("Filter:")
 df.filter(col("salary") > 60000).show()
 
+print("WithColumn + Cast:")
+df = df.withColumn("bonus", (col("salary") * 0.10).cast(DoubleType()))
 
-# -------------------------------
-# 5. Add New Column
-# -------------------------------
+print("Rename Column:")
+df = df.withColumnRenamed("name", "employee_name")
 
-df = df.withColumn("bonus", col("salary") * 0.10)
+print("Drop Column Example:")
+df_temp = df.drop("bonus")
 
-print("After Adding Bonus Column:")
-df.show()
-
-# -------------------------------
-# 6. Conditional Column (when)
-# -------------------------------
-
+print("Conditional Column:")
 df = df.withColumn(
     "category",
     when(col("salary") > 60000, "High")
@@ -78,21 +78,56 @@ df = df.withColumn(
     .otherwise("Low")
 )
 
-print("After Adding Category:")
 df.show()
 
-# -------------------------------
-# 7. GroupBy and Aggregation
-# -------------------------------
+# ============================================================
+# ADVANCED COLUMN OPERATIONS
+# ============================================================
 
-print("Department Wise Avg Salary:")
-df.groupBy("department") \
-    .agg(avg("salary").alias("avg_salary")) \
-    .show()
+print("IsIn Example:")
+df.filter(col("department").isin("HR", "IT")).show()
 
-# -------------------------------
-# 8. Join Example
-# -------------------------------
+print("Between Example:")
+df.filter(col("salary").between(50000, 65000)).show()
+
+print("Like Example:")
+df.filter(col("employee_name").like("A%")).show()
+
+print("Concat Example:")
+df = df.withColumn("full_info",
+                   concat(col("employee_name"), lit(" - "), col("department")))
+
+# ============================================================
+# AGGREGATIONS
+# ============================================================
+
+print("Aggregations:")
+df.groupBy("department").agg(
+    count("*").alias("emp_count"),
+    sum("salary").alias("total_salary"),
+    avg("salary").alias("avg_salary"),
+    min("salary").alias("min_salary"),
+    max("salary").alias("max_salary"),
+    count_distinct("salary").alias("distinct_salary")
+).show()
+
+# ============================================================
+# SORTING
+# ============================================================
+
+print("Order By Salary Desc:")
+df.orderBy(col("salary").desc()).show()
+
+# ============================================================
+# DISTINCT & DUPLICATES
+# ============================================================
+
+print("Distinct Departments:")
+df.select("department").distinct().show()
+
+# ============================================================
+# JOINS
+# ============================================================
 
 dept_data = [
     ("HR", "Human Resource"),
@@ -102,49 +137,71 @@ dept_data = [
 
 dept_df = spark.createDataFrame(dept_data, ["department", "dept_full_name"])
 
-joined_df = df.join(dept_df, on="department", how="inner")
+print("Inner Join:")
+df.join(dept_df, "department", "inner").show()
 
-print("After Join:")
-joined_df.show()
+print("Left Join:")
+df.join(dept_df, "department", "left").show()
 
-# -------------------------------
-# 9. Union Example
-# -------------------------------
+print("Broadcast Join:")
+df.join(broadcast(dept_df), "department").show()
 
-new_data = [(6, "Frank", "IT", 72000, 7200.0, "High")]
-new_df = spark.createDataFrame(new_data, df.columns)
-
-df = df.union(new_df)
-
-print("After Union:")
-df.show()
-
-# -------------------------------
-# 10. Window Function
-# -------------------------------
+# ============================================================
+# WINDOW FUNCTIONS
+# ============================================================
 
 window_spec = Window.partitionBy("department").orderBy(col("salary").desc())
 
-df = df.withColumn("rank_in_dept", row_number().over(window_spec))
+df = df.withColumn("row_number", row_number().over(window_spec)) \
+       .withColumn("rank", rank().over(window_spec)) \
+       .withColumn("dense_rank", dense_rank().over(window_spec)) \
+       .withColumn("lag_salary", lag("salary").over(window_spec)) \
+       .withColumn("lead_salary", lead("salary").over(window_spec))
 
-print("After Window Function (Ranking):")
 df.show()
 
-# -------------------------------
-# 11. Handling Nulls
-# -------------------------------
+# ============================================================
+# COMPLEX DATA TYPES
+# ============================================================
 
-df_null = df.withColumn("salary", when(col("id") == 2, None).otherwise(col("salary")))
+print("Array + Explode:")
+df = df.withColumn("letters", split(col("employee_name"), ""))
 
-print("With Null Value:")
-df_null.show()
+df.select("employee_name", explode(col("letters")).alias("letter")).show()
 
-print("Fill Null:")
+# ============================================================
+# SQL OPERATIONS
+# ============================================================
+
+df.createOrReplaceTempView("employees")
+
+spark.sql("""
+SELECT department, AVG(salary) as avg_salary
+FROM employees
+GROUP BY department
+""").show()
+
+# ============================================================
+# NULL HANDLING
+# ============================================================
+
+df_null = df.withColumn("salary",
+                        when(col("id") == 2, None).otherwise(col("salary")))
+
 df_null.fillna({"salary": 0}).show()
 
-# -------------------------------
-# 12. Repartition & Coalesce
-# -------------------------------
+# ============================================================
+# CACHING & PERSISTENCE
+# ============================================================
+
+df.cache()
+df.persist(StorageLevel.MEMORY_AND_DISK)
+
+print("Count after caching:", df.count())
+
+# ============================================================
+# REPARTITION & COALESCE
+# ============================================================
 
 print("Partitions Before:", df.rdd.getNumPartitions())
 
@@ -154,16 +211,19 @@ print("After Repartition:", df_repart.rdd.getNumPartitions())
 df_coalesce = df_repart.coalesce(2)
 print("After Coalesce:", df_coalesce.rdd.getNumPartitions())
 
-# -------------------------------
-# 13. Explain Execution Plan
-# -------------------------------
+# ============================================================
+# EXECUTION PLAN
+# ============================================================
 
 print("Execution Plan:")
-df.explain()
+df.explain(True)
 
+# ============================================================
+# FILE WRITE EXAMPLES (Uncomment to test)
+# ============================================================
 
-# Uncomment if needed
 # df.write.mode("overwrite").csv("output_csv")
 # df.write.mode("overwrite").parquet("output_parquet")
+# df.write.partitionBy("department").parquet("output_partitioned")
 
 spark.stop()
