@@ -6,6 +6,10 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
 from pyspark.sql.functions import *
 from pyspark.sql.window import Window
+import os
+
+os.environ['PYSPARK_PYTHON'] = r'C:\Users\raghu\PycharmProjects\Stages_Tasks\.venv\Scripts\python.exe'
+os.environ['PYSPARK_DRIVER_PYTHON'] = r'C:\Users\raghu\PycharmProjects\Stages_Tasks\.venv\Scripts\python.exe'
 
 # -------------------------------
 # 1. Create Spark Session
@@ -23,7 +27,7 @@ schema = StructType([
     StructField("id", IntegerType(), True),
     StructField("name", StringType(), True),
     StructField("department", StringType(), True),
-    StructField("salary", DoubleType(), True)
+    StructField("salary", IntegerType(), True)
 ])
 
 # -------------------------------
