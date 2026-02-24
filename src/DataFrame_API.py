@@ -1,17 +1,14 @@
 # ============================================================
 #              FULL PYSPARK DATAFRAME MASTER PRACTICE
 # ============================================================
-
+from OS.initialize import doinit
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
 from pyspark.sql.window import Window
 from pyspark import StorageLevel
-import os
 
-os.environ['PYSPARK_PYTHON'] = r'C:\Users\raghu\PycharmProjects\Stages_Tasks\.venv\Scripts\python.exe'
-os.environ['PYSPARK_DRIVER_PYTHON'] = r'C:\Users\raghu\PycharmProjects\Stages_Tasks\.venv\Scripts\python.exe'
-
+doinit()
 
 # ------------------------------------------------------------
 # 1. Spark Session
@@ -56,7 +53,7 @@ df.show()
 # ============================================================
 
 print("Select:")
-df.select("name", "salary").show()
+df.select(col("name"), "salary").show()
 
 print("Filter:")
 df.filter(col("salary") > 60000).show()
