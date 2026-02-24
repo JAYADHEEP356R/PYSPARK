@@ -224,6 +224,6 @@ df.explain(True)
 
 # df.write.mode("overwrite").csv("output_csv")
 # df.write.mode("overwrite").parquet("output_parquet")
-# df.write.partitionBy("department").parquet("output_partitioned")
+# df.write.partitionBy("department").parquet("output_partitioned") 95 cent of dataframe operations ended
 
 spark.stop()
