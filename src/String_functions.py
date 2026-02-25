@@ -3,7 +3,7 @@
 # Categorized by Concepts
 # Author: Jayadheep R
 # ============================================================
-
+from OS.initialize import doinit
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
@@ -11,6 +11,8 @@ from pyspark.sql.types import *
 # ============================================================
 # 1. CREATE SPARK SESSION
 # ============================================================
+
+doinit()
 
 spark = SparkSession.builder \
     .appName("PySpark String Functions Master") \
