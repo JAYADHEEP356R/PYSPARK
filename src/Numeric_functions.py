@@ -194,7 +194,8 @@ df_window = df.select(
     col("salary"),
     rank().over(window_spec).alias("rank_salary"),
     dense_rank().over(window_spec).alias("dense_rank_salary"),
-    row_number().over(window_spec).alias("row_number_salary")
+    row_number().over(window_spec).alias("row_number_salary"),
+    lag(col="salary").over(window_spec).alias("previous_salary")
 )
 
 df_window.show()
